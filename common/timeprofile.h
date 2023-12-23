@@ -102,10 +102,10 @@ static inline void timeprofile_display(timeprofile_t *tp)
     }
 }
 
-static inline uint64_t timeprofile_total_ms(timeprofile_t *tp)
+static inline double timeprofile_total_ms(timeprofile_t *tp)
 {
     if (zarray_size(tp->stamps) == 0)
-        return 0;
+        return 0.0;
 
     struct timeprofile_entry *first, *last;
     zarray_get_volatile(tp->stamps, 0, &first);
