@@ -30,22 +30,22 @@ of the authors and should not be interpreted as representing official policies,
 either expressed or implied, of the Regents of The University of Michigan.
 */
 
+#include <math.h>
 #include <stdio.h>
 #include <unistd.h>
-#include <math.h>
 
 #include "apriltag.h"
-#include "tag36h11.h"
-#include "tag25h9.h"
 #include "tag16h5.h"
+#include "tag25h9.h"
+#include "tag36h11.h"
 #include "tagCircle21h7.h"
 #include "tagCircle49h12.h"
 #include "tagCustom48h12.h"
 #include "tagStandard41h12.h"
 #include "tagStandard52h13.h"
 
-// This demo program is also used to profile and test the internals of the apriltag library, the internals should
-// under normal usage not be used.
+// This demo program is also used to profile and test the internals of the
+// apriltag library, the internals should under normal usage not be used.
 #include "common/getopt.h"
 #include "common/image_u8.h"
 #include "common/pjpeg.h"
@@ -54,219 +54,228 @@ either expressed or implied, of the Regents of The University of Michigan.
 //
 // tagtest [options] input.pnm
 
-int main(int argc, char *argv[])
-{
-    getopt_t *getopt = getopt_create();
+int main(int argc, char *argv[]) {
+  getopt_t *getopt = getopt_create();
 
-    getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
-    getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
-    getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
-    getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
-    getopt_add_int(getopt, 'i', "iters", "1", "Repeat processing on input set this many times");
-    getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
-    getopt_add_int(getopt, 'a', "hamming", "1", "Detect tags with up to this many bit errors.");
-    getopt_add_double(getopt, 'x', "decimate", "2.0", "Decimate input image by this factor");
-    getopt_add_double(getopt, 'b', "blur", "0.0", "Apply low-pass blur to input; negative sharpens");
-    getopt_add_bool(getopt, '0', "refine-edges", 1, "Spend more time trying to align edges of tags");
+  getopt_add_bool(getopt, 'h', "help", 0, "Show this help");
+  getopt_add_bool(getopt, 'd', "debug", 0, "Enable debugging output (slow)");
+  getopt_add_bool(getopt, 'q', "quiet", 0, "Reduce output");
+  getopt_add_string(getopt, 'f', "family", "tag36h11", "Tag family to use");
+  getopt_add_int(getopt, 'i', "iters", "1",
+                 "Repeat processing on input set this many times");
+  getopt_add_int(getopt, 't', "threads", "1", "Use this many CPU threads");
+  getopt_add_int(getopt, 'a', "hamming", "1",
+                 "Detect tags with up to this many bit errors.");
+  getopt_add_double(getopt, 'x', "decimate", "2.0",
+                    "Decimate input image by this factor");
+  getopt_add_double(getopt, 'b', "blur", "0.0",
+                    "Apply low-pass blur to input; negative sharpens");
+  getopt_add_bool(getopt, '0', "refine-edges", 1,
+                  "Spend more time trying to align edges of tags");
 
-    if (!getopt_parse(getopt, argc, argv, 1) || getopt_get_bool(getopt, "help")) {
-        printf("Usage: %s [options] <input files>\n", argv[0]);
-        getopt_do_usage(getopt);
-        exit(0);
-    }
+  if (!getopt_parse(getopt, argc, argv, 1) || getopt_get_bool(getopt, "help")) {
+    printf("Usage: %s [options] <input files>\n", argv[0]);
+    getopt_do_usage(getopt);
+    exit(0);
+  }
 
-    const zarray_t *inputs = getopt_get_extra_args(getopt);
+  const zarray_t *inputs = getopt_get_extra_args(getopt);
 
-    apriltag_family_t *tf = NULL;
-    const char *famname = getopt_get_string(getopt, "family");
-    if (!strcmp(famname, "tag36h11")) {
-        tf = tag36h11_create();
-    } else if (!strcmp(famname, "tag25h9")) {
-        tf = tag25h9_create();
-    } else if (!strcmp(famname, "tag16h5")) {
-        tf = tag16h5_create();
-    } else if (!strcmp(famname, "tagCircle21h7")) {
-        tf = tagCircle21h7_create();
-    } else if (!strcmp(famname, "tagCircle49h12")) {
-        tf = tagCircle49h12_create();
-    } else if (!strcmp(famname, "tagStandard41h12")) {
-        tf = tagStandard41h12_create();
-    } else if (!strcmp(famname, "tagStandard52h13")) {
-        tf = tagStandard52h13_create();
-    } else if (!strcmp(famname, "tagCustom48h12")) {
-        tf = tagCustom48h12_create();
-    } else {
-        printf("Unrecognized tag family name. Use e.g. \"tag36h11\".\n");
-        exit(-1);
-    }
+  apriltag_family_t *tf = NULL;
+  const char *famname = getopt_get_string(getopt, "family");
+  if (!strcmp(famname, "tag36h11")) {
+    tf = tag36h11_create();
+  } else if (!strcmp(famname, "tag25h9")) {
+    tf = tag25h9_create();
+  } else if (!strcmp(famname, "tag16h5")) {
+    tf = tag16h5_create();
+  } else if (!strcmp(famname, "tagCircle21h7")) {
+    tf = tagCircle21h7_create();
+  } else if (!strcmp(famname, "tagCircle49h12")) {
+    tf = tagCircle49h12_create();
+  } else if (!strcmp(famname, "tagStandard41h12")) {
+    tf = tagStandard41h12_create();
+  } else if (!strcmp(famname, "tagStandard52h13")) {
+    tf = tagStandard52h13_create();
+  } else if (!strcmp(famname, "tagCustom48h12")) {
+    tf = tagCustom48h12_create();
+  } else {
+    printf("Unrecognized tag family name. Use e.g. \"tag36h11\".\n");
+    exit(-1);
+  }
 
-    apriltag_detector_t *td = apriltag_detector_create();
-    apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming"));
+  apriltag_detector_t *td = apriltag_detector_create();
+  apriltag_detector_add_family_bits(td, tf, getopt_get_int(getopt, "hamming"));
+  td->quad_decimate = getopt_get_double(getopt, "decimate");
+  td->quad_sigma = getopt_get_double(getopt, "blur");
+  td->nthreads = getopt_get_int(getopt, "threads");
+  td->debug = getopt_get_bool(getopt, "debug");
+  td->refine_edges = getopt_get_bool(getopt, "refine-edges");
 
-    // Demo program parameters
-    int quiet = getopt_get_bool(getopt, "quiet");
-    int maxiters = getopt_get_int(getopt, "iters");
+  // Demo program parameters
+  int quiet = getopt_get_bool(getopt, "quiet");
+  int maxiters = getopt_get_int(getopt, "iters");
 
-    const int hamm_hist_max = 10;
+  const int hamm_hist_max = 10;
 
-    // Load the source images
-    zarray_t *images = zarray_create(sizeof(image_u8_t*));
+  // Load the source images
+  zarray_t *images = zarray_create(sizeof(image_u8_t *));
 
-    for (int input = 0; input < zarray_size(inputs); input++) {
-        char *path = NULL;
-        zarray_get(inputs, input, &path);
-        if (!quiet)
-            printf("loading %s\n", path);
-        else
-            printf("%20s ", path);
+  for (int input = 0; input < zarray_size(inputs); input++) {
+    char *path = NULL;
+    zarray_get(inputs, input, &path);
+    if (!quiet)
+      printf("loading %s\n", path);
+    else
+      printf("%20s ", path);
 
+    image_u8_t *im = NULL;
+    if (str_ends_with(path, "pnm") || str_ends_with(path, "PNM") ||
+        str_ends_with(path, "pgm") || str_ends_with(path, "PGM"))
+      im = image_u8_create_from_pnm(path);
+    else if (str_ends_with(path, "jpg") || str_ends_with(path, "JPG")) {
+      int err = 0;
+      pjpeg_t *pjpeg = pjpeg_create_from_file(path, 0, &err);
+      if (pjpeg == NULL) {
+        printf("pjpeg failed to load: %s, error %d\n", path, err);
+        continue;
+      }
 
-        image_u8_t *im = NULL;
-        if (str_ends_with(path, "pnm") || str_ends_with(path, "PNM") ||
-            str_ends_with(path, "pgm") || str_ends_with(path, "PGM"))
-            im = image_u8_create_from_pnm(path);
-        else if (str_ends_with(path, "jpg") || str_ends_with(path, "JPG")) {
-            int err = 0;
-            pjpeg_t *pjpeg = pjpeg_create_from_file(path, 0, &err);
-            if (pjpeg == NULL) {
-                printf("pjpeg failed to load: %s, error %d\n", path, err);
-                continue;
-            }
+      if (1) {
+        im = pjpeg_to_u8_baseline(pjpeg);
+      } else {
+        printf("illumination invariant\n");
 
-            if (1) {
-                im = pjpeg_to_u8_baseline(pjpeg);
-            } else {
-                printf("illumination invariant\n");
+        image_u8x3_t *imc = pjpeg_to_u8x3_baseline(pjpeg);
 
-                image_u8x3_t *imc = pjpeg_to_u8x3_baseline(pjpeg);
+        im = image_u8_create(imc->width, imc->height);
 
-                im = image_u8_create(imc->width, imc->height);
+        for (int y = 0; y < imc->height; y++) {
+          for (int x = 0; x < imc->width; x++) {
+            double r = imc->buf[y * imc->stride + 3 * x + 0] / 255.0;
+            double g = imc->buf[y * imc->stride + 3 * x + 1] / 255.0;
+            double b = imc->buf[y * imc->stride + 3 * x + 2] / 255.0;
 
-                for (int y = 0; y < imc->height; y++) {
-                    for (int x = 0; x < imc->width; x++) {
-                        double r = imc->buf[y * imc->stride + 3 * x + 0] / 255.0;
-                        double g = imc->buf[y * imc->stride + 3 * x + 1] / 255.0;
-                        double b = imc->buf[y * imc->stride + 3 * x + 2] / 255.0;
+            double alpha = 0.42;
+            double v = 0.5 + log(g) - alpha * log(b) - (1 - alpha) * log(r);
+            int iv = v * 255;
+            if (iv < 0)
+              iv = 0;
+            if (iv > 255)
+              iv = 255;
 
-                        double alpha = 0.42;
-                        double v = 0.5 + log(g) - alpha * log(b) - (1 - alpha) * log(r);
-                        int iv = v * 255;
-                        if (iv < 0)
-                            iv = 0;
-                        if (iv > 255)
-                            iv = 255;
-
-                        im->buf[y * im->stride + x] = iv;
-                    }
-                }
-                image_u8x3_destroy(imc);
-                if (td->debug)
-                    image_u8_write_pnm(im, "debug_invariant.pnm");
-            }
-
-            pjpeg_destroy(pjpeg);
+            im->buf[y * im->stride + x] = iv;
+          }
         }
+        image_u8x3_destroy(imc);
+        if (td->debug)
+          image_u8_write_pnm(im, "debug_invariant.pnm");
+      }
 
-        if (im == NULL) {
-            printf("couldn't load %s\n", path);
-            continue;
+      pjpeg_destroy(pjpeg);
+    }
+
+    if (im == NULL) {
+      printf("couldn't load %s\n", path);
+      continue;
+    }
+    zarray_add(images, &im);
+    printf("loaded image: %s %dx%d\n", path, im->width, im->height);
+  }
+
+  int total_quads = 0;
+  int total_detections = 0;
+  int total_hamm_hist[hamm_hist_max];
+  memset(total_hamm_hist, 0, sizeof(total_hamm_hist));
+  double total_time = 0;
+
+  for (int iter = 0; iter < maxiters; iter++) {
+    if (maxiters > 1 && (iter % 100) == 0)
+      printf("iter %d / %d\n", iter + 1, maxiters);
+
+    image_u8_t *im = NULL;
+    for (int i = 0; i < zarray_size(images); ++i) {
+      zarray_get(images, i, &im);
+      int hamm_hist[hamm_hist_max];
+      memset(hamm_hist, 0, sizeof(hamm_hist));
+
+      zarray_t *detections = apriltag_detector_detect(td, im);
+      int sz = zarray_size(detections);
+      total_detections += sz;
+      for (int di = 0; di < sz; ++di) {
+        apriltag_detection_t *det;
+        zarray_get(detections, di, &det);
+        if (!quiet) {
+          printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, margin %8.3f\n",
+                 di, det->family->nbits, det->family->h, det->id, det->hamming,
+                 det->decision_margin);
         }
-        zarray_add(images, &im);
-        printf("loaded image: %s %dx%d\n", path, im->width, im->height);
+        hamm_hist[det->hamming]++;
+        total_hamm_hist[det->hamming]++;
+      }
+      apriltag_detections_destroy(detections);
+
+      if (!quiet) {
+        timeprofile_display(td->tp);
+      }
+
+      total_quads += td->nquads;
+      double t = timeprofile_total_ms(td->tp);
+      total_time += t;
+
+      if (!quiet) {
+        printf("hamm ");
+
+        for (int hi = 0; hi < hamm_hist_max; hi++)
+          printf("%5d ", hamm_hist[hi]);
+
+        printf("\ntime %.2fms ", t);
+        printf("quads %5d", td->nquads);
+
+        printf("\n");
+      }
     }
+  }
+  printf("Summary\n");
+  printf("hamm ");
+  for (int hi = 0; hi < hamm_hist_max; hi++)
+    printf("%5d ", total_hamm_hist[hi]);
+  printf("\ntime %.2fms ", total_time);
+  printf("avg_time %.2fms ", total_time / maxiters);
+  printf("quads %5d ", total_quads);
+  printf("avg_quads %5d ", total_quads / maxiters);
+  printf("detections %5d ", total_detections);
+  printf("avg_detections %5d", total_detections / maxiters);
+  printf("\n");
+  for (int i = 0; i < zarray_size(images); ++i) {
+    image_u8_t *im;
+    zarray_get(images, i, &im);
+    image_u8_destroy(im);
+  }
+  zarray_destroy(images);
 
-    int total_quads = 0;
-    int total_detections = 0;
-    int total_hamm_hist[hamm_hist_max];
-    memset(total_hamm_hist, 0, sizeof(total_hamm_hist));
-    double total_time = 0;
+  // don't deallocate contents of inputs; those are the argv
+  apriltag_detector_destroy(td);
 
-    for (int iter = 0; iter < maxiters; iter++) {
-        if (maxiters > 1 && (iter % 100) == 0)
-            printf("iter %d / %d\n", iter + 1, maxiters);
+  if (!strcmp(famname, "tag36h11")) {
+    tag36h11_destroy(tf);
+  } else if (!strcmp(famname, "tag25h9")) {
+    tag25h9_destroy(tf);
+  } else if (!strcmp(famname, "tag16h5")) {
+    tag16h5_destroy(tf);
+  } else if (!strcmp(famname, "tagCircle21h7")) {
+    tagCircle21h7_destroy(tf);
+  } else if (!strcmp(famname, "tagCircle49h12")) {
+    tagCircle49h12_destroy(tf);
+  } else if (!strcmp(famname, "tagStandard41h12")) {
+    tagStandard41h12_destroy(tf);
+  } else if (!strcmp(famname, "tagStandard52h13")) {
+    tagStandard52h13_destroy(tf);
+  } else if (!strcmp(famname, "tagCustom48h12")) {
+    tagCustom48h12_destroy(tf);
+  }
 
-        image_u8_t *im = NULL;
-        for (int i = 0; i < zarray_size(images); ++i) {
-            zarray_get(images, i, &im);
-            int hamm_hist[hamm_hist_max];
-            memset(hamm_hist, 0, sizeof(hamm_hist));
+  getopt_destroy(getopt);
 
-            zarray_t *detections = apriltag_detector_detect(td, im);
-            int sz = zarray_size(detections);
-            total_detections += sz;
-            for (int di = 0; di < sz; ++di) {
-                apriltag_detection_t *det;
-                zarray_get(detections, di, &det);
-                if (!quiet) {
-                    printf("detection %3d: id (%2dx%2d)-%-4d, hamming %d, margin %8.3f\n",
-                           di, det->family->nbits, det->family->h, det->id, det->hamming, det->decision_margin);
-                }
-                hamm_hist[det->hamming]++;
-                total_hamm_hist[det->hamming]++;
-            }
-            apriltag_detections_destroy(detections);
-
-            if (!quiet) {
-                timeprofile_display(td->tp);
-            }
-
-            total_quads += td->nquads;
-            double t = timeprofile_total_ms(td->tp);
-            total_time += t;
-
-            if (!quiet) {
-                printf("hamm ");
-
-                for (int hi = 0; hi < hamm_hist_max; hi++)
-                    printf("%5d ", hamm_hist[hi]);
-
-                printf("\ntime %.2fms ", t);
-                printf("quads %5d", td->nquads);
-
-                printf("\n");
-            }
-        }
-    }
-    printf("Summary\n");
-    printf("hamm ");
-    for (int hi = 0; hi < hamm_hist_max; hi++)
-        printf("%5d ", total_hamm_hist[hi]);
-    printf("\ntime %.2fms ", total_time);
-    printf("avg_time %.2fms ", total_time / maxiters);
-    printf("quads %5d ", total_quads);
-    printf("avg_quads %5d ", total_quads / maxiters);
-    printf("detections %5d ", total_detections);
-    printf("avg_detections %5d", total_detections / maxiters);
-    printf("\n");
-    for (int i = 0 ; i < zarray_size(images); ++i) {
-        image_u8_t *im;
-        zarray_get(images, i, &im);
-        image_u8_destroy(im);
-    }
-    zarray_destroy(images);
-
-    // don't deallocate contents of inputs; those are the argv
-    apriltag_detector_destroy(td);
-
-    if (!strcmp(famname, "tag36h11")) {
-        tag36h11_destroy(tf);
-    } else if (!strcmp(famname, "tag25h9")) {
-        tag25h9_destroy(tf);
-    } else if (!strcmp(famname, "tag16h5")) {
-        tag16h5_destroy(tf);
-    } else if (!strcmp(famname, "tagCircle21h7")) {
-        tagCircle21h7_destroy(tf);
-    } else if (!strcmp(famname, "tagCircle49h12")) {
-        tagCircle49h12_destroy(tf);
-    } else if (!strcmp(famname, "tagStandard41h12")) {
-        tagStandard41h12_destroy(tf);
-    } else if (!strcmp(famname, "tagStandard52h13")) {
-        tagStandard52h13_destroy(tf);
-    } else if (!strcmp(famname, "tagCustom48h12")) {
-        tagCustom48h12_destroy(tf);
-    }
-
-    getopt_destroy(getopt);
-
-    return 0;
+  return 0;
 }
